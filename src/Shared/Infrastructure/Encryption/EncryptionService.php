@@ -13,14 +13,18 @@ final readonly class EncryptionService
         private KeyStorageApi $keyStorageApi
     ) { }
 
-    public function encrypt(object $dbModel): object
+    /**
+     * @template T
+     * @param T $dbModel
+     * @return T
+     */
+    public function encrypt($dbModel)
     {
         $reflection = new ReflectionClass($dbModel);
         $properties = $reflection->getProperties();
 
         $toEncrypt = [];
         $encryptionKeyId = null;
-        $encryptionAlgorithm = null;
 
         foreach ($properties as $property) {
             $attributes = $property->getAttributes();
@@ -28,7 +32,6 @@ final readonly class EncryptionService
             foreach ($attributes as $attribute) {
                 if ($attribute->getName() === KeyId::class) {
                     $encryptionKeyId = $property->getValue($dbModel);
-                    $encryptionAlgorithm = $attribute->getArguments()[0] ?? null;
                     break;
                 }
 
@@ -39,7 +42,11 @@ final readonly class EncryptionService
             }
         }
 
-        $crypto = $this->keyStorageApi->load($encryptionKeyId, $encryptionAlgorithm);
+        if (null === $encryptionKeyId) {
+            throw new \RuntimeException('Encryption key id not found');
+        }
+
+        $crypto = $this->keyStorageApi->load($encryptionKeyId);
 
         foreach ($toEncrypt as $propertyName => $propertyValue) {
             $setter = 'set' . ucfirst($propertyName);
@@ -49,7 +56,12 @@ final readonly class EncryptionService
         return $dbModel;
     }
 
-    public function decrypt(object $dbModel): object
+    /**
+     * @template T
+     * @param T $dbModel
+     * @return T
+     */
+    public function decrypt($dbModel)
     {
         $reflection = new ReflectionClass($dbModel);
         $properties = $reflection->getProperties();

@@ -2,6 +2,7 @@
 
 namespace App\PatientIdentity\Application\UseCases;
 
+use App\KeyStorage\Application\KeyStorageApi;
 use App\PatientIdentity\Domain\ContactInformation;
 use App\PatientIdentity\Domain\Patient;
 use App\PatientIdentity\Domain\PatientId;
@@ -12,6 +13,7 @@ final readonly class RegisterNewPatient
 {
     public function __construct(
         private PatientRepository $patientRepository,
+        private KeyStorageApi $keyStorageApi,
     ) { }
 
     public function execute(RegisterNewPatientDTO $dto): string
@@ -32,6 +34,8 @@ final readonly class RegisterNewPatient
                 $dto->phoneNumber,
             )
         );
+
+        $this->keyStorageApi->createKey((string) $id);
 
         $this->patientRepository->save($patient);
 

@@ -14,16 +14,11 @@ final class InMemoryPatientRepository implements PatientRepository
 
     public function __construct(
         private PatientMapper $mapper,
-        private EncryptionService $encryptionService,
     ) { }
 
     public function save(Patient $patient): void
     {
         $dbModel = $this->mapper->toDatabaseModel($patient);
-
-        /** @var PatientDbModel $dbModel */
-        $dbModel = $this->encryptionService->encrypt($dbModel);
-
         $this->patients[$dbModel->getId()] = $dbModel;
     }
 
@@ -35,8 +30,6 @@ final class InMemoryPatientRepository implements PatientRepository
     public function find(PatientId $patientId): ?Patient
     {
         $dbModel = $this->patients[(string) $patientId];
-        $dbModel = $this->encryptionService->decrypt($dbModel);
-
         return $this->mapper->toDomainModel($dbModel);
     }
 }
