@@ -44,4 +44,8 @@ class Patient
         return $this->contactInformation->getPhoneNumber();
     }
 
+    public function updateContactInformation(ContactInformation $newContactInformation): void
+    {
+        $this->contactInformation = $newContactInformation;
+    }
 }

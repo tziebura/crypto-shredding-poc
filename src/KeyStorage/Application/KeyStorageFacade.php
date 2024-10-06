@@ -2,24 +2,40 @@
 
 namespace App\KeyStorage\Application;
 
-final class KeyStorageFacade implements KeyStorageApi
+use App\KeyStorage\Domain\EncryptionKey as DomainEncryptionKey;
+use App\KeyStorage\Domain\EncryptionKeyRepository;
+
+final readonly class KeyStorageFacade implements KeyStorageApi
 {
-    private array $keys = [];
+    public function __construct(
+        private EncryptionKeyRepository $encryptionKeyRepository,
+    ) { }
 
     public function load(string $keyId): Crypto
     {
-        if (!isset($this->keys[$keyId])) {
-            throw new \RuntimeException('Encryption key not found');
+        $encryptionKey = $this->encryptionKeyRepository->find($keyId);
+
+        if (null === $encryptionKey) {
+            return new NullKey();
         }
 
-        return $this->keys[$keyId];
+        return EncryptionKey::of($encryptionKey->toKey());
     }
 
     public function createKey(string $keyId): void
     {
-        $key = openssl_random_pseudo_bytes(32);
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));
+        $encryptionKey = DomainEncryptionKey::aes256($keyId);
+        $this->encryptionKeyRepository->save($encryptionKey);
+    }
 
-        $this->keys[$keyId] = new SymmetricKey($key, 'aes-256-cbc', $iv);
+    public function deleteKey(string $id): void
+    {
+        $encryptionKey = $this->encryptionKeyRepository->find($id);
+
+        if (null === $encryptionKey) {
+            throw new \RuntimeException(sprintf('Key "%s" not found.', $id));
+        }
+
+        $this->encryptionKeyRepository->delete($encryptionKey);
     }
 }

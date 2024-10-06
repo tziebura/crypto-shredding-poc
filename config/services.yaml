@@ -26,5 +26,9 @@ services:
         arguments:
             $inner: '@App\PatientIdentity\Infrastructure\Persistence\InMemory\AutomapperPlus'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    App\PatientIdentity\Domain\PatientRepository: '@App\PatientIdentity\Infrastructure\Persistence\SQL\DoctrineORMPatientRepository'
+    App\PatientIdentity\Infrastructure\Persistence\SQL\PatientMapper: '@App\PatientIdentity\Infrastructure\Persistence\SQL\EncryptionMapperDecorator'
+
+    App\PatientIdentity\Infrastructure\Persistence\SQL\EncryptionMapperDecorator:
+        arguments:
+            $inner: '@App\PatientIdentity\Infrastructure\Persistence\SQL\AutomapperPlus'

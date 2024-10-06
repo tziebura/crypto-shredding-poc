@@ -18,10 +18,6 @@ final readonly class RegisterNewPatient
 
     public function execute(RegisterNewPatientDTO $dto): string
     {
-        if ($this->patientRepository->existsByIdSerialNumber($dto->idSerialNumber)) {
-            throw new RuntimeException('Patient already exists.');
-        }
-
         $id = PatientId::new();
 
         $patient = new Patient(

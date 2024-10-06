@@ -58,42 +58,41 @@ final readonly class EncryptionService
 
     /**
      * @template T
-     * @param T $dbModel
+     * @param T $value
      * @return T
      */
-    public function decrypt($dbModel)
+    public function decrypt($value)
     {
-        $reflection = new ReflectionClass($dbModel);
+        $value = clone $value;
+        $reflection = new ReflectionClass($value);
         $properties = $reflection->getProperties();
 
         $toDecrypt = [];
         $encryptionKeyId = null;
-        $encryptionAlgorithm = null;
 
         foreach ($properties as $property) {
             $attributes = $property->getAttributes();
 
             foreach ($attributes as $attribute) {
                 if ($attribute->getName() === KeyId::class) {
-                    $encryptionKeyId = $property->getValue($dbModel);
-                    $encryptionAlgorithm = $attribute->getArguments()[0] ?? null;
+                    $encryptionKeyId = $property->getValue($value);
                     break;
                 }
 
                 if ($attribute->getName() === Encrypt::class) {
-                    $toDecrypt[$property->getName()] = $property->getValue($dbModel);
+                    $toDecrypt[$property->getName()] = $property->getValue($value);
                     break;
                 }
             }
         }
 
-        $crypto = $this->keyStorageApi->load($encryptionKeyId, $encryptionAlgorithm);
+        $crypto = $this->keyStorageApi->load($encryptionKeyId);
 
         foreach ($toDecrypt as $propertyName => $propertyValue) {
             $setter = 'set' . ucfirst($propertyName);
-            $dbModel->{$setter}($crypto->decrypt($propertyValue));
+            $value->{$setter}($crypto->decrypt($propertyValue));
         }
 
-        return $dbModel;
+        return $value;
     }
 }
